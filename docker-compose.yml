@@ -25,8 +25,8 @@ services:
     env_file:
       - .env.example
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/calmdental
-      BACKEND_CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@postgres:5432/calmdental}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
     ports:
       - "8000:8000"
     volumes:
@@ -43,7 +43,7 @@ services:
     env_file:
       - .env.example
     environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     volumes:
