@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calmdental-api"
+version = "0.1.0"
+description = "FastAPI backend for CalmDental"
+requires-python = ">=3.11"
+dependencies = [
+  "alembic>=1.14.0",
+  "fastapi>=0.115.4",
+  "openai>=2.0.0",
+  "psycopg>=3.2.3",
+  "pydantic>=2.9.2",
+  "pydantic-settings>=2.6.1",
+  "sqlalchemy>=2.0.36",
+  "uvicorn>=0.32.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27.2",
+  "pytest>=8.3.3"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["app/tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]

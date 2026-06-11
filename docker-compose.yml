@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: calmdental-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: calmdental
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d calmdental"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+    container_name: calmdental-api
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/calmdental
+      BACKEND_CORS_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./apps/api:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+    container_name: calmdental-web
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
+
+volumes:
+  postgres-data:

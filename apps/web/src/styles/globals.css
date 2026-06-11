@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 42 78% 96%;
+  --foreground: 221 34% 17%;
+  --muted: 198 60% 92%;
+  --muted-foreground: 217 16% 39%;
+  --border: 31 43% 83%;
+  --primary: 174 59% 30%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 35 92% 64%;
+  --accent-foreground: 222 36% 16%;
+  --surface: 0 0% 100%;
+  --surface-soft: 45 86% 93%;
+  --sky: 199 88% 76%;
+  --coral: 9 87% 72%;
+  --lavender: 257 62% 84%;
+  --yellow: 47 94% 77%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(200 72% 96%) 100%);
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: hsl(var(--accent) / 0.35);
+}
+
+@media print {
+  @page {
+    margin: 0.65in;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header,
+  footer,
+  nav,
+  button,
+  a {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .print-section {
+    break-inside: avoid;
+    color: #000000 !important;
+  }
+
+  .print-card {
+    border: 1px solid #000000 !important;
+    box-shadow: none !important;
+  }
+
+  .print-section *,
+  .print-card * {
+    color: #000000 !important;
+    background: transparent !important;
+  }
+}
