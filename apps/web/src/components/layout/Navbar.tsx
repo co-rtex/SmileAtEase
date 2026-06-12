@@ -23,6 +23,12 @@ export function Navbar() {
           </Link>
           <Link
             className="rounded-md px-2 py-2 transition-colors hover:bg-yellow/25 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            href="/explore"
+          >
+            Explore
+          </Link>
+          <Link
+            className="hidden rounded-md px-2 py-2 transition-colors hover:bg-yellow/25 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:inline-flex"
             href="/example"
           >
             Example
