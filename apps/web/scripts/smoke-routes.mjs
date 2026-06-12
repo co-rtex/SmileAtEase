@@ -6,6 +6,7 @@ const requiredRoutes = [
   ["Landing page", "page.tsx"],
   ["Start page", "start/page.tsx"],
   ["Guide index", "guides/page.tsx"],
+  ["Explorer page", "explore/page.tsx"],
   ["Privacy page", "privacy/page.tsx"],
   ["Terms page", "terms/page.tsx"],
   ["About page", "about/page.tsx"],
