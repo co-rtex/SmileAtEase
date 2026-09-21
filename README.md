@@ -1,42 +1,105 @@
 # SmileAtEase
 
-SmileAtEase helps nervous dental patients feel more prepared before a dental visit. People complete a structured intake and receive a non-diagnostic visit preparation plan plus a printable comfort card.
+**A full-stack visit-preparation tool that turns a structured dental-anxiety intake into a non-diagnostic preparation plan and printable comfort card.**
 
-This repository currently includes the local scaffold, frontend landing and intake flow, result rendering, guide and policy pages, backend validation and safety checks, persistence, rule-based plan generation, and optional AI plan generation behind a feature flag.
+[Live frontend](https://smile-at-ease.vercel.app)
 
-## Local Setup
+> **Status:** the intake, plan generation, safety rules, persistence, guide/policy pages, and local deployment stack are implemented. Authentication, analytics, PDF export, email sharing, and accounts are not.
 
-1. Copy the example environment file if you want local overrides:
+## Why It Exists
 
-   ```bash
-   cp .env.example .env
-   ```
+Patients who feel anxious about dental care may struggle to explain triggers, communication preferences, and comfort needs during an appointment. SmileAtEase collects those preferences before the visit and produces a concise plan the patient can review or share.
 
-2. Start the full local stack:
+The technical focus is controlled plan generation: deterministic safety handling is authoritative, optional AI output is schema-validated, and unsafe or malformed AI output falls back to the rule-based path.
 
-   ```bash
-   docker compose up --build
-   ```
+## Key Features
 
-3. Open the frontend:
+- Multi-step intake with frontend and backend validation
+- Non-diagnostic preparation plans and printable comfort cards
+- Deterministic urgent/crisis handling that bypasses AI
+- Rule-based generation as the default mode
+- Optional AI generation behind a feature flag
+- Schema, sanitizer, and safety validation before AI output is accepted
+- Automatic fallback to rule-based generation on provider, schema, or safety failure
+- PostgreSQL persistence with Alembic migrations and configurable retention
+- Health and database-readiness endpoints
+- Docker Compose environment for the complete local stack
+- Backend test suite plus frontend route smoke, type, and production-build checks
 
-   ```txt
-   http://localhost:3000
-   ```
+## Architecture
 
-4. Check the backend health route:
+```mermaid
+flowchart TD
+    Intake[Next.js intake] --> API[FastAPI]
+    API --> Validation[Validation and safety rules]
+    Validation --> Rules[Rule-based generator]
+    Validation --> AI[Optional AI generator]
+    AI --> Guard[Schema and safety validation]
+    Guard -->|valid| Plan[Preparation plan]
+    Guard -->|invalid or failed| Rules
+    Rules --> Plan
+    API --> DB[(PostgreSQL)]
+    Plan --> Result[Result page and comfort card]
+```
 
-   ```txt
-   http://localhost:8000/api/health
-   ```
+Urgent and crisis inputs follow deterministic safety responses and never call the AI provider. AI mode is optional; the normal local and production default is rule-based generation.
 
-   Expected response:
+## Technical Highlights
 
-   ```json
-   { "status": "ok" }
-   ```
+| Area | Implementation |
+| --- | --- |
+| API design | FastAPI routes with Pydantic request/response models |
+| Safety | Deterministic escalation paths, sanitization, output validation, and fallback |
+| Persistence | SQLAlchemy models, PostgreSQL, Alembic migrations, and retention settings |
+| Frontend | Next.js App Router, TypeScript, React Hook Form, Zod, and Tailwind CSS |
+| Deployment | Separate frontend/API containers plus PostgreSQL in Docker Compose |
+| Verification | Backend unit/route tests and frontend route, type, and build checks |
 
-## Development Commands
+## Tech Stack
+
+- **Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS, React Hook Form, Zod
+- **Backend:** Python 3.11+, FastAPI, Pydantic, SQLAlchemy, Alembic
+- **Database:** PostgreSQL 16
+- **Optional AI:** OpenAI provider behind `AI_PLAN_MODE=ai`
+- **Tooling:** pytest, TypeScript, Docker Compose
+
+## Getting Started
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Open:
+
+- Frontend: `http://localhost:3000`
+- API health: `http://localhost:8000/api/health`
+- API readiness: `http://localhost:8000/api/readiness`
+
+Expected health response:
+
+```json
+{"status":"ok"}
+```
+
+## API Example
+
+Generate a plan with a validated intake:
+
+```http
+POST /api/plans/generate
+Content-Type: application/json
+```
+
+The endpoint validates the intake, saves the assessment, runs the configured generation path, applies safety checks, persists the plan, and returns the result. Sample normal, boundary, urgent, crisis, cost, and judgment-related inputs are documented in [docs/sample-intakes.md](docs/sample-intakes.md).
+
+Other implemented routes include:
+
+- `POST /api/assessments` — validate and store an assessment
+- `GET /api/health` — service health
+- `GET /api/readiness` — database connectivity readiness
+
+## Testing
 
 Frontend:
 
@@ -54,23 +117,18 @@ Backend:
 cd apps/api
 python -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
-.venv/bin/python -m pytest
-.venv/bin/alembic upgrade head
+pip install -e '.[dev]'
+python -m pytest
+alembic upgrade head --sql
 ```
 
-Use plain `pytest` only after the virtual environment is activated.
+Backend coverage includes assessment and plan routes, schemas, sanitization, deterministic generation, AI validation/fallback behavior, safety paths, configuration, and database models.
 
 ## Environment
 
-All required variables are documented in `.env.example`. Do not commit real API keys or secrets.
+All supported variables are documented in [.env.example](.env.example).
 
-Frontend production:
-
-- `NEXT_PUBLIC_API_BASE_URL` should point to the deployed backend base URL, for example `https://your-api.example.com`.
-- Local development falls back to `http://localhost:8000` when the variable is not set.
-
-Backend production:
+Important production values include:
 
 - `DATABASE_URL`
 - `BACKEND_CORS_ORIGINS`
@@ -80,96 +138,37 @@ Backend production:
 - `OPENAI_API_KEY`
 - `OPENAI_MODEL`
 - `AI_REQUEST_TIMEOUT_SECONDS`
-- `ENVIRONMENT`
+- `NEXT_PUBLIC_API_BASE_URL`
 
-Set `BACKEND_CORS_ORIGINS` to the deployed frontend origin, for example `https://your-app.vercel.app`. Do not use wildcard CORS origins in production.
+Do not use wildcard CORS origins in production. AI mode also requires a provider key; rule-based mode does not.
 
-## Backend API Notes
+## Project Status
 
-- `POST /api/assessments` validates and saves intake data only.
-- `POST /api/plans/generate` validates intake, saves an assessment, and creates a preparation plan.
-- Plan generation defaults to `AI_PLAN_MODE=rule_based`.
-- Optional AI generation can be enabled with `AI_PLAN_MODE=ai` and `OPENAI_API_KEY`.
-- AI output is validated against the plan schema and safety rules. Unsafe, incomplete, malformed, or failed AI output falls back to rule-based generation.
-- Crisis and urgent cases never call AI; they always use deterministic safety responses.
-- Saved assessments and plans expire according to `PLAN_RETENTION_DAYS`.
+### Implemented
+
+- Landing, intake, result, guide, privacy, terms, and about pages
+- Intake validation and sanitization
+- Deterministic safety responses
+- Rule-based and feature-flagged AI plan generation
+- PostgreSQL assessment/plan persistence and migrations
+- Configurable retention
+- Docker Compose local environment
+- Frontend and backend verification commands
+
+### Not implemented
+
+- Authentication or user accounts
+- Analytics
+- PDF export
+- Email sharing
+- Account history
 
 ## Deployment
 
-Frontend on Vercel:
+The frontend can deploy independently to Vercel, while the API runs on a Python application host with managed PostgreSQL. Configure `NEXT_PUBLIC_API_BASE_URL`, production CORS origins, database credentials, retention, and optional AI settings before deployment.
 
-1. Set the project root or build command for `apps/web`.
-2. Add `NEXT_PUBLIC_API_BASE_URL` with the deployed backend URL.
-3. Build with `npm run build`.
+See [DEPLOYMENT_CHECKLIST.md](DEPLOYMENT_CHECKLIST.md) for hosted setup, smoke testing, rollback, and AI-mode checks. See [DEMO.md](DEMO.md) for the local walkthrough.
 
-Backend on Render, Railway, or Fly.io:
+## Important Boundary
 
-1. Deploy `apps/api`.
-2. Install dependencies with `pip install -e ".[dev]"` or the platform equivalent.
-3. Run the app with Uvicorn, for example:
-
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port $PORT
-   ```
-
-4. Configure the backend environment variables listed above.
-5. Run migrations after provisioning the database:
-
-   ```bash
-   alembic upgrade head
-   ```
-
-Database options:
-
-- Neon Postgres
-- Supabase Postgres
-- Railway Postgres
-- Render Postgres
-
-Health checks:
-
-- `/api/health` returns a simple service status.
-- `/api/readiness` checks whether the backend can query the database.
-
-## Verification
-
-Frontend:
-
-```bash
-cd apps/web
-npm run smoke
-npm run build
-npm run type-check
-```
-
-Backend:
-
-```bash
-cd apps/api
-.venv/bin/python -m pytest
-.venv/bin/alembic upgrade head --sql
-```
-
-## Runbooks
-
-- `DEPLOYMENT_CHECKLIST.md` covers hosted frontend, backend, database, CORS, smoke testing, rollback, and AI mode notes.
-- `DEMO.md` covers a local demo walkthrough.
-- `docs/sample-intakes.md` includes sample payloads for normal, boundary, urgent, crisis, high concern, cost, and embarrassment/judgment scenarios.
-
-## Current Scope
-
-Current implemented scope includes:
-
-- Monorepo scaffold
-- Docker Compose local environment
-- Frontend landing page, intake flow, result page, guides, privacy, terms, and about pages
-- FastAPI health endpoint at `/api/health`
-- Backend assessment endpoint at `/api/assessments`
-- Backend plan endpoint at `/api/plans/generate`
-- Backend intake validation, sanitizer, and safety checks
-- Rule-based plan generation by default
-- Optional AI plan generation behind `AI_PLAN_MODE=ai`
-- Assessment and plan persistence tables and migrations
-- PostgreSQL local service
-
-Auth, analytics, PDF export, email sharing, and account features are not implemented.
+SmileAtEase provides visit-preparation information, not diagnosis, treatment, or emergency care. The repository's deterministic safety responses and fallback behavior are designed around that boundary.
